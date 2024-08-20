@@ -4,56 +4,45 @@ pub struct Vec3 {
 }
 
 /// point3 is just an alias for vec3, but useful for geometric clarity in the code.
-#[allow(unused)]
 pub type Point3 = Vec3;
 
 impl Vec3 {
-    #[allow(unused)]
     pub fn zero() -> Self {
         Vec3 { e: [0.0, 0.0, 0.0] }
     }
 
-    #[allow(unused)]
     pub fn new(x: f64, y: f64, z: f64) -> Self {
         Vec3 { e: [x, y, z] }
     }
 
-    #[allow(unused)]
     pub fn x(&self) -> f64 {
         self.e[0]
     }
 
-    #[allow(unused)]
     pub fn y(&self) -> f64 {
         self.e[1]
     }
 
-    #[allow(unused)]
     pub fn z(&self) -> f64 {
         self.e[2]
     }
 
-    #[allow(unused)]
     pub fn at(&self, idx: usize) -> f64 {
         self.e[idx]
     }
 
-    #[allow(unused)]
     pub fn len(self) -> f64 {
         f64::sqrt(self.len_squared())
     }
 
-    #[allow(unused)]
     pub fn len_squared(self) -> f64 {
         self.e[0] * self.e[0] + self.e[1] * self.e[1] + self.e[2] * self.e[2]
     }
 
-    #[allow(unused)]
     pub fn dot(a: &Vec3, b: &Vec3) -> f64 {
         a.e[0] * b.e[0] + a.e[1] * b.e[1] + a.e[2] * b.e[2]
     }
 
-    #[allow(unused)]
     pub fn cross(a: &Vec3, b: &Vec3) -> Vec3 {
         Vec3::new(
             a.e[1] * b.e[2] - a.e[2] * b.e[1],
@@ -62,7 +51,6 @@ impl Vec3 {
         )
     }
 
-    #[allow(unused)]
     pub fn unit(&self) -> Vec3 {
         *self / self.len()
     }
