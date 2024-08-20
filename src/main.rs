@@ -13,12 +13,10 @@ use vec3::{Point3, Vec3};
 
 fn ray_color(r: &Ray) -> Color {
     let t = hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, r);
-
     if t > 0.0 {
         let n = (r.at(t) - Vec3::new(0.0, 0.0, -1.0)).unit();
         return 0.5 * Color::new(n.x() + 1.0, n.y() + 1.0, n.z() + 1.0);
     }
-
     let unit_direction = r.direction().unit();
     let a = 0.5 * (unit_direction.y() + 1.0);
     (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
@@ -26,15 +24,15 @@ fn ray_color(r: &Ray) -> Color {
 
 fn hit_sphere(center: &Point3, radius: f64, ray: &Ray) -> f64 {
     let oc = center - ray.origin();
-    let a = Vec3::dot(ray.direction(), ray.direction());
-    let b = -2.0 * Vec3::dot(ray.direction(), &oc);
-    let c = Vec3::dot(&oc, &oc) - radius * radius;
+    let a = ray.direction().len_squared();
+    let h = Vec3::dot(ray.direction(), &oc);
+    let c = oc.len_squared() - radius * radius;
+    let discriminant = h * h - a * c;
 
-    let discriminant = b * b - 4.0 * a * c;
     if discriminant < 0.0 {
         -1.0
     } else {
-        (-b - f64::sqrt(discriminant)) / (2.0 * a)
+        (h - f64::sqrt(discriminant)) / a
     }
 }
 
