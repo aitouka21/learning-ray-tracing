@@ -4,6 +4,7 @@ use crate::vec3::Vec3;
 pub type Color = Vec3;
 
 #[allow(unused)]
+#[allow(clippy::cast_possible_truncation)]
 pub fn write<T>(out: &mut T, pixel_color: &Color) -> std::io::Result<()>
 where
     T: std::io::Write,

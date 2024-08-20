@@ -111,6 +111,17 @@ impl std::ops::Sub for Vec3 {
     }
 }
 
+impl std::ops::Sub for &Vec3 {
+    type Output = Vec3;
+    fn sub(self, rhs: Self) -> Self::Output {
+        Vec3::new(
+            self.e[0] - rhs.e[0],
+            self.e[1] - rhs.e[1],
+            self.e[2] - rhs.e[2],
+        )
+    }
+}
+
 impl std::ops::Mul for Vec3 {
     type Output = Self;
     fn mul(self, rhs: Vec3) -> Self::Output {
