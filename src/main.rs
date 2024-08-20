@@ -27,12 +27,9 @@ fn hit_sphere(center: &Point3, radius: f64, ray: &Ray) -> f64 {
     let a = ray.direction().len_squared();
     let h = Vec3::dot(ray.direction(), &oc);
     let c = oc.len_squared() - radius * radius;
-    let discriminant = h * h - a * c;
-
-    if discriminant < 0.0 {
-        -1.0
-    } else {
-        (h - f64::sqrt(discriminant)) / a
+    match h * h - a * c {
+        n if n < 0.0 => -1.0,
+        n => (h - f64::sqrt(n)) / a,
     }
 }
 
@@ -63,10 +60,7 @@ fn main() -> std::io::Result<()> {
     let pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
     let mut write_buffer = io::stdout();
-
-    writeln!(write_buffer, "P3")?;
-    writeln!(write_buffer, "{image_width} {image_height}")?;
-    writeln!(write_buffer, "255")?;
+    writeln!(write_buffer, "P3\n{image_width} {image_height}\n255")?;
 
     for j in 0..image_height {
         for i in 0..image_width {
