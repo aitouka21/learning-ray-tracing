@@ -1,36 +1,30 @@
 use std::{
     io::{self, Write},
     ops::Div,
+    rc::Rc,
 };
 
 mod color;
+mod hittable;
+mod hittable_list;
 mod ray;
+mod sphere;
 mod vec3;
 
 use color::Color;
+use hittable::Hittable;
+use hittable_list::HittableList;
 use ray::Ray;
+use sphere::Sphere;
 use vec3::{Point3, Vec3};
 
-fn ray_color(r: &Ray) -> Color {
-    let t = hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, r);
-    if t > 0.0 {
-        let n = (r.at(t) - Vec3::new(0.0, 0.0, -1.0)).unit();
-        return 0.5 * Color::new(n.x() + 1.0, n.y() + 1.0, n.z() + 1.0);
+fn ray_color(r: &Ray, world: &HittableList) -> Color {
+    if let Some(hit_record) = world.hit(r, 0.0, f64::INFINITY) {
+        return 0.5 * (hit_record.normal + Color::new(1.0, 1.0, 1.0));
     }
     let unit_direction = r.direction().unit();
     let a = 0.5 * (unit_direction.y() + 1.0);
     (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
-}
-
-fn hit_sphere(center: &Point3, radius: f64, ray: &Ray) -> f64 {
-    let oc = center - ray.origin();
-    let a = ray.direction().len_squared();
-    let h = Vec3::dot(ray.direction(), &oc);
-    let c = oc.len_squared() - radius * radius;
-    match h * h - a * c {
-        n if n < 0.0 => -1.0,
-        n => (h - f64::sqrt(n)) / a,
-    }
 }
 
 fn main() -> std::io::Result<()> {
@@ -42,6 +36,14 @@ fn main() -> std::io::Result<()> {
     if image_height < 1 {
         image_height = 1;
     }
+
+    let mut world = HittableList::default();
+
+    let s1 = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5);
+    let s2 = Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0);
+
+    world.add(Rc::new(s1));
+    world.add(Rc::new(s2));
 
     let focal_length = 1.0;
     let viewport_height = 2.0;
@@ -70,7 +72,7 @@ fn main() -> std::io::Result<()> {
             let pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
             let ray_direction = pixel_center - camera_center;
             let ray = Ray::new(camera_center, ray_direction);
-            let c = ray_color(&ray);
+            let c = ray_color(&ray, &world);
             color::write(&mut write_buffer, &c)?;
         }
     }
