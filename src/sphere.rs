@@ -1,5 +1,7 @@
 use crate::{
     hittable::{HitRecord, Hittable},
+    interval::Interval,
+    ray::Ray,
     vec3::{Point3, Vec3},
 };
 
@@ -14,16 +16,8 @@ impl Sphere {
     }
 }
 
-pub struct Phantom;
-
-impl Hittable for Phantom {
-    fn hit(&self, _ray: &crate::ray::Ray, _ray_tmin: f64, _ray_tmax: f64) -> Option<HitRecord> {
-        None
-    }
-}
-
 impl Hittable for Sphere {
-    fn hit(&self, ray: &crate::ray::Ray, ray_tmin: f64, ray_tmax: f64) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, ray_t: &Interval) -> Option<HitRecord> {
         let oc = &self.center - ray.origin();
         let a = ray.direction().len_squared();
         let h = Vec3::dot(ray.direction(), &oc);
@@ -35,11 +29,11 @@ impl Hittable for Sphere {
         }
 
         let sqrtd = f64::sqrt(discriminant);
-        let mut root = (h - sqrtd) / a;
+        let root = (h - sqrtd) / a;
 
-        if root <= ray_tmin || ray_tmax <= root {
-            root = (h + sqrtd) / a;
-            if root <= ray_tmin || ray_tmax <= root {
+        if !ray_t.surrounds(root) {
+            let root = (h + sqrtd) / a;
+            if !ray_t.surrounds(root) {
                 return None;
             };
         }
