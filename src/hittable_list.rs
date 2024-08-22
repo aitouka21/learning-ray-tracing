@@ -7,7 +7,7 @@ use std::rc::Rc;
 
 #[derive(Default)]
 pub struct HittableList {
-    objects: Vec<std::rc::Rc<dyn Hittable>>,
+    objects: Vec<Rc<dyn Hittable>>,
 }
 
 impl HittableList {
