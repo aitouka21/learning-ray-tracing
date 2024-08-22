@@ -1,3 +1,5 @@
+use rand::{rngs::ThreadRng, Rng};
+
 #[derive(Default, Clone, Copy, Debug)]
 pub struct Vec3 {
     e: [f64; 3],
@@ -33,6 +35,21 @@ impl Vec3 {
 
     pub fn len(self) -> f64 {
         f64::sqrt(self.len_squared())
+    }
+
+    pub fn random_unit_vector(rng: &mut ThreadRng) -> Self {
+        loop {
+            let v = Vec3::new(
+                rng.gen_range(-1.0..1.0),
+                rng.gen_range(-1.0..1.0),
+                rng.gen_range(-1.0..1.0),
+            );
+
+            if v.len_squared() < 1.0 {
+                break v;
+            }
+        }
+        .unit()
     }
 
     pub fn len_squared(self) -> f64 {

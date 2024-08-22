@@ -19,16 +19,22 @@ pub struct Camera {
     pixel_delta_v: Vec3,
     samples_per_pixel: i32,
     pixel_samples_scale: f64,
+    max_depth: i32,
 }
 
 impl Default for Camera {
     fn default() -> Self {
-        Self::new(16.0 / 9.0, 400, 100)
+        Self::new(16.0 / 9.0, 400, 100, 50)
     }
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f64, image_width: i32, samples_per_pixel: i32) -> Self {
+    pub fn new(
+        aspect_ratio: f64,
+        image_width: i32,
+        samples_per_pixel: i32,
+        max_depth: i32,
+    ) -> Self {
         #[allow(clippy::cast_possible_truncation)]
         let image_height = match f64::from(image_width) / aspect_ratio {
             n if n > 1.0 => n as i32,
@@ -61,6 +67,7 @@ impl Camera {
             pixel_delta_v,
             samples_per_pixel,
             pixel_samples_scale,
+            max_depth,
         }
     }
 
@@ -79,7 +86,7 @@ impl Camera {
                 let mut pixel_color = Color::new(0.0, 0.0, 0.0);
                 for _ in 0..self.samples_per_pixel {
                     let r = self.get_ray(i, j, &mut rng);
-                    pixel_color += Self::ray_color(&r, world);
+                    pixel_color += Self::ray_color(&r, self.max_depth, world, &mut rng);
                 }
                 let c = self.pixel_samples_scale * pixel_color;
                 color::write(&mut write_buffer, &c)?;
@@ -89,7 +96,7 @@ impl Camera {
     }
 
     fn sample_square(rng: &mut ThreadRng) -> Vec3 {
-        Vec3::new(rng.gen_range(-0.5..=0.5), rng.gen_range(-0.5..=0.5), 0.0)
+        Vec3::new(rng.gen_range(-0.5..0.5), rng.gen_range(-0.5..0.5), 0.0)
     }
 
     fn get_ray(&self, i: i32, j: i32, rng: &mut ThreadRng) -> Ray {
@@ -104,10 +111,15 @@ impl Camera {
         Ray::new(self.center, ray_direction)
     }
 
-    fn ray_color(r: &Ray, world: &HittableList) -> Color {
-        let interval = Interval::new(0.0, f64::INFINITY);
+    fn ray_color(r: &Ray, depth: i32, world: &HittableList, rng: &mut ThreadRng) -> Color {
+        if depth <= 0 {
+            return Color::default();
+        }
+        let interval = Interval::new(0.001, f64::INFINITY);
         if let Some(hit_record) = world.hit(r, &interval) {
-            return 0.5 * (hit_record.normal + Color::new(1.0, 1.0, 1.0));
+            let direction = hit_record.normal + Vec3::random_unit_vector(rng);
+            let r = Ray::new(hit_record.p, direction);
+            return 0.3 * Self::ray_color(&r, depth - 1, world, rng);
         }
         let unit_direction = r.direction().unit();
         let a = 0.5 * (unit_direction.y() + 1.0);
