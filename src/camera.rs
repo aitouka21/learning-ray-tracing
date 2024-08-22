@@ -1,3 +1,4 @@
+use rand::prelude::*;
 use std::io::Write;
 
 use crate::{
@@ -16,16 +17,18 @@ pub struct Camera {
     pixel00_loc: Point3,
     pixel_delta_u: Vec3,
     pixel_delta_v: Vec3,
+    samples_per_pixel: i32,
+    pixel_samples_scale: f64,
 }
 
 impl Default for Camera {
     fn default() -> Self {
-        Self::new(16.0 / 9.0, 400)
+        Self::new(16.0 / 9.0, 400, 100)
     }
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f64, image_width: i32) -> Self {
+    pub fn new(aspect_ratio: f64, image_width: i32, samples_per_pixel: i32) -> Self {
         #[allow(clippy::cast_possible_truncation)]
         let image_height = match f64::from(image_width) / aspect_ratio {
             n if n > 1.0 => n as i32,
@@ -47,6 +50,8 @@ impl Camera {
 
         let pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
+        let pixel_samples_scale = 1.0 / f64::from(samples_per_pixel);
+
         Self {
             image_width,
             image_height,
@@ -54,6 +59,8 @@ impl Camera {
             pixel00_loc,
             pixel_delta_u,
             pixel_delta_v,
+            samples_per_pixel,
+            pixel_samples_scale,
         }
     }
 
@@ -65,20 +72,36 @@ impl Camera {
             self.image_width, self.image_height
         )?;
 
+        let mut rng = rand::thread_rng();
+
         for j in 0..self.image_height {
             for i in 0..self.image_width {
-                let i = f64::from(i);
-                let j = f64::from(j);
-
-                let pixel_center =
-                    self.pixel00_loc + (i * self.pixel_delta_u) + (j * self.pixel_delta_v);
-                let ray_direction = pixel_center - self.center;
-                let ray = Ray::new(self.center, ray_direction);
-                let c = Self::ray_color(&ray, world);
+                let mut pixel_color = Color::new(0.0, 0.0, 0.0);
+                for _ in 0..self.samples_per_pixel {
+                    let r = self.get_ray(i, j, &mut rng);
+                    pixel_color += Self::ray_color(&r, world);
+                }
+                let c = self.pixel_samples_scale * pixel_color;
                 color::write(&mut write_buffer, &c)?;
             }
         }
         write_buffer.flush()
+    }
+
+    fn sample_square(rng: &mut ThreadRng) -> Vec3 {
+        Vec3::new(rng.gen_range(-0.5..=0.5), rng.gen_range(-0.5..=0.5), 0.0)
+    }
+
+    fn get_ray(&self, i: i32, j: i32, rng: &mut ThreadRng) -> Ray {
+        let i = f64::from(i);
+        let j = f64::from(j);
+        let offset = Self::sample_square(rng);
+        let pixel_sample = self.pixel00_loc
+            + (i + offset.x()) * self.pixel_delta_u
+            + (j + offset.y()) * self.pixel_delta_v;
+
+        let ray_direction = pixel_sample - self.center;
+        Ray::new(self.center, ray_direction)
     }
 
     fn ray_color(r: &Ray, world: &HittableList) -> Color {
