@@ -1,5 +1,4 @@
 use rand::prelude::*;
-use std::io::Write;
 
 use crate::{
     color::{self, Color},
@@ -72,15 +71,10 @@ impl Camera {
         }
     }
 
-    pub fn render(&self, world: &HittableList) -> std::io::Result<()> {
-        let mut write_buffer = std::io::stdout();
-        writeln!(
-            write_buffer,
-            "P3\n{0} {1}\n255",
-            self.image_width, self.image_height
-        )?;
-
+    pub fn render(&self, world: &HittableList) {
+        println!("P3\n{0} {1}\n255", self.image_width, self.image_height);
         for j in 0..self.image_height {
+            eprint!("Progress: ({}/ {})\r", j + 1, self.image_height);
             for i in 0..self.image_width {
                 let mut pixel_color = Color::new(0.0, 0.0, 0.0);
                 for _ in 0..self.samples_per_pixel {
@@ -88,10 +82,10 @@ impl Camera {
                     pixel_color += Self::ray_color(&r, self.max_depth, world);
                 }
                 let c = self.pixel_samples_scale * pixel_color;
-                color::write(&mut write_buffer, &c)?;
+                color::write(&c);
             }
         }
-        write_buffer.flush()
+        eprintln!("Done.                        ");
     }
 
     fn sample_square() -> Vec3 {

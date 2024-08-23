@@ -11,10 +11,7 @@ fn linear_to_gamma(linear_component: f64) -> f64 {
 }
 
 #[allow(clippy::cast_possible_truncation)]
-pub fn write<T>(out: &mut T, pixel_color: &Color) -> std::io::Result<()>
-where
-    T: std::io::Write,
-{
+pub fn write(pixel_color: &Color) {
     static INTENSITY: Interval = Interval {
         min: 0.0,
         max: 0.999,
@@ -32,6 +29,5 @@ where
     let g = (256.0 * INTENSITY.clamp(g)) as i32;
     let b = (256.0 * INTENSITY.clamp(b)) as i32;
 
-    writeln!(out, "{r} {g} {b}")?;
-    Ok(())
+    println!("{r} {g} {b}");
 }

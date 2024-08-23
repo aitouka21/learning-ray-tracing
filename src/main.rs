@@ -17,7 +17,7 @@ use material::Material;
 use sphere::Sphere;
 use vec3::Point3;
 
-fn main() -> std::io::Result<()> {
+fn main() {
     let mut world = HittableList::default();
 
     let material_ground = Rc::new(Material::lambertian(Color::new(0.8, 0.8, 0.0)));
@@ -50,5 +50,5 @@ fn main() -> std::io::Result<()> {
     }
 
     let camera = Camera::default();
-    camera.render(&world)
+    camera.render(&world);
 }
