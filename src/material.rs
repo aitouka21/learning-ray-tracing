@@ -7,7 +7,7 @@ pub struct ScatterResult {
 
 pub enum Material {
     Lambertian { albedo: Color },
-    Metal { albedo: Color },
+    Metal { albedo: Color, fuzz: f64 },
 }
 
 impl Material {
@@ -27,12 +27,19 @@ impl Material {
                 };
                 Some(result)
             }
-            Self::Metal { albedo } => {
-                let reflected = Vec3::reflect(r_in.direction(), &hit_record.normal);
+            Self::Metal { albedo, fuzz } => {
+                let reflected = Vec3::reflect(r_in.direction(), &hit_record.normal).unit()
+                    + (Vec3::random_unit_vector() * fuzz);
+
+                let scattered = Ray::new(hit_record.p, reflected);
+
+                if Vec3::dot(scattered.direction(), &hit_record.normal) <= 0.0 {
+                    return None;
+                }
 
                 let result = ScatterResult {
-                    scattered: Ray::new(hit_record.p, reflected),
                     attenuation: *albedo,
+                    scattered,
                 };
                 Some(result)
             }
@@ -43,7 +50,11 @@ impl Material {
         Material::Lambertian { albedo }
     }
 
-    pub fn metal(albedo: Color) -> Self {
-        Material::Metal { albedo }
+    pub fn metal(albedo: Color, fuzz: f64) -> Self {
+        if fuzz < 1.0 {
+            Material::Metal { albedo, fuzz }
+        } else {
+            Material::Metal { albedo, fuzz: 1.0 }
+        }
     }
 }

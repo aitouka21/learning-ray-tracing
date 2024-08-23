@@ -165,6 +165,13 @@ impl std::ops::Mul<f64> for Vec3 {
     }
 }
 
+impl std::ops::Mul<&f64> for Vec3 {
+    type Output = Self;
+    fn mul(self, rhs: &f64) -> Self::Output {
+        Vec3::new(self.e[0] * rhs, self.e[1] * rhs, self.e[2] * rhs)
+    }
+}
+
 impl std::ops::Mul<f64> for &Vec3 {
     type Output = Vec3;
     fn mul(self, rhs: f64) -> Self::Output {
