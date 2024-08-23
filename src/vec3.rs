@@ -1,4 +1,4 @@
-use rand::{rngs::ThreadRng, Rng};
+use rand::Rng;
 
 #[derive(Default, Clone, Copy, Debug)]
 pub struct Vec3 {
@@ -33,11 +33,12 @@ impl Vec3 {
         self.e[idx]
     }
 
-    pub fn len(self) -> f64 {
+    pub fn len(&self) -> f64 {
         f64::sqrt(self.len_squared())
     }
 
-    pub fn random_unit_vector(rng: &mut ThreadRng) -> Self {
+    pub fn random_unit_vector() -> Self {
+        let mut rng = rand::thread_rng();
         loop {
             let v = Vec3::new(
                 rng.gen_range(-1.0..1.0),
@@ -52,8 +53,17 @@ impl Vec3 {
         .unit()
     }
 
-    pub fn len_squared(self) -> f64 {
+    pub fn reflect(v: &Vec3, n: &Vec3) -> Self {
+        v - 2.0 * Self::dot(v, n) * n
+    }
+
+    pub fn len_squared(&self) -> f64 {
         self.e[0] * self.e[0] + self.e[1] * self.e[1] + self.e[2] * self.e[2]
+    }
+
+    pub fn near_zero(&self) -> bool {
+        let s = 1e-8;
+        (f64::abs(self.e[0]) < s) && (f64::abs(self.e[1]) < s) && (f64::abs(self.e[2]) < s)
     }
 
     pub fn dot(a: &Vec3, b: &Vec3) -> f64 {
@@ -126,6 +136,16 @@ impl std::ops::Sub for &Vec3 {
         )
     }
 }
+impl std::ops::Sub<Vec3> for &Vec3 {
+    type Output = Vec3;
+    fn sub(self, rhs: Vec3) -> Self::Output {
+        Vec3::new(
+            self.e[0] - rhs.e[0],
+            self.e[1] - rhs.e[1],
+            self.e[2] - rhs.e[2],
+        )
+    }
+}
 
 impl std::ops::Mul for Vec3 {
     type Output = Self;
@@ -145,9 +165,23 @@ impl std::ops::Mul<f64> for Vec3 {
     }
 }
 
+impl std::ops::Mul<f64> for &Vec3 {
+    type Output = Vec3;
+    fn mul(self, rhs: f64) -> Self::Output {
+        Vec3::new(self.e[0] * rhs, self.e[1] * rhs, self.e[2] * rhs)
+    }
+}
+
 impl std::ops::Mul<Vec3> for f64 {
     type Output = Vec3;
     fn mul(self, rhs: Vec3) -> Self::Output {
+        Vec3::new(rhs.e[0] * self, rhs.e[1] * self, rhs.e[2] * self)
+    }
+}
+
+impl std::ops::Mul<&Vec3> for f64 {
+    type Output = Vec3;
+    fn mul(self, rhs: &Vec3) -> Self::Output {
         Vec3::new(rhs.e[0] * self, rhs.e[1] * self, rhs.e[2] * self)
     }
 }

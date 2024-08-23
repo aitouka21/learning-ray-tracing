@@ -6,6 +6,7 @@ use crate::{
     hittable::Hittable,
     hittable_list::HittableList,
     interval::Interval,
+    material::ScatterResult,
     ray::Ray,
     vec3::{Point3, Vec3},
 };
@@ -79,14 +80,12 @@ impl Camera {
             self.image_width, self.image_height
         )?;
 
-        let mut rng = rand::thread_rng();
-
         for j in 0..self.image_height {
             for i in 0..self.image_width {
                 let mut pixel_color = Color::new(0.0, 0.0, 0.0);
                 for _ in 0..self.samples_per_pixel {
-                    let r = self.get_ray(i, j, &mut rng);
-                    pixel_color += Self::ray_color(&r, self.max_depth, world, &mut rng);
+                    let r = self.get_ray(i, j);
+                    pixel_color += Self::ray_color(&r, self.max_depth, world);
                 }
                 let c = self.pixel_samples_scale * pixel_color;
                 color::write(&mut write_buffer, &c)?;
@@ -95,14 +94,15 @@ impl Camera {
         write_buffer.flush()
     }
 
-    fn sample_square(rng: &mut ThreadRng) -> Vec3 {
+    fn sample_square() -> Vec3 {
+        let mut rng = rand::thread_rng();
         Vec3::new(rng.gen_range(-0.5..0.5), rng.gen_range(-0.5..0.5), 0.0)
     }
 
-    fn get_ray(&self, i: i32, j: i32, rng: &mut ThreadRng) -> Ray {
+    fn get_ray(&self, i: i32, j: i32) -> Ray {
         let i = f64::from(i);
         let j = f64::from(j);
-        let offset = Self::sample_square(rng);
+        let offset = Self::sample_square();
         let pixel_sample = self.pixel00_loc
             + (i + offset.x()) * self.pixel_delta_u
             + (j + offset.y()) * self.pixel_delta_v;
@@ -111,15 +111,21 @@ impl Camera {
         Ray::new(self.center, ray_direction)
     }
 
-    fn ray_color(r: &Ray, depth: i32, world: &HittableList, rng: &mut ThreadRng) -> Color {
+    fn ray_color(r: &Ray, depth: i32, world: &HittableList) -> Color {
         if depth <= 0 {
             return Color::default();
         }
         let interval = Interval::new(0.001, f64::INFINITY);
         if let Some(hit_record) = world.hit(r, &interval) {
-            let direction = hit_record.normal + Vec3::random_unit_vector(rng);
-            let r = Ray::new(hit_record.p, direction);
-            return 0.3 * Self::ray_color(&r, depth - 1, world, rng);
+            if let Some(ScatterResult {
+                attenuation,
+                scattered,
+            }) = hit_record.mat.scatter(r, &hit_record)
+            {
+                return attenuation * Self::ray_color(&scattered, depth - 1, world);
+            }
+
+            Color::default();
         }
         let unit_direction = r.direction().unit();
         let a = 0.5 * (unit_direction.y() + 1.0);
