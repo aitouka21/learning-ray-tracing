@@ -57,6 +57,13 @@ impl Vec3 {
         v - 2.0 * Self::dot(v, n) * n
     }
 
+    pub fn refract(uv: &Vec3, n: &Vec3, etai_over_etat: f64) -> Self {
+        let cos_theta = f64::min(Vec3::dot(&(-uv), n), 1.0);
+        let r_out_perp = etai_over_etat * (uv + cos_theta * n);
+        let r_out_parallel = -(1.0 - r_out_perp.len_squared()).abs().sqrt() * n;
+        r_out_perp + r_out_parallel
+    }
+
     pub fn len_squared(&self) -> f64 {
         self.e[0] * self.e[0] + self.e[1] * self.e[1] + self.e[2] * self.e[2]
     }
@@ -100,6 +107,28 @@ impl std::ops::Add for Vec3 {
     }
 }
 
+impl std::ops::Add<&Vec3> for Vec3 {
+    type Output = Self;
+    fn add(self, rhs: &Vec3) -> Self::Output {
+        Vec3::new(
+            self.e[0] + rhs.e[0],
+            self.e[1] + rhs.e[1],
+            self.e[2] + rhs.e[2],
+        )
+    }
+}
+
+impl std::ops::Add<Vec3> for &Vec3 {
+    type Output = Vec3;
+    fn add(self, rhs: Vec3) -> Self::Output {
+        Vec3::new(
+            self.e[0] + rhs.e[0],
+            self.e[1] + rhs.e[1],
+            self.e[2] + rhs.e[2],
+        )
+    }
+}
+
 impl std::ops::AddAssign for Vec3 {
     fn add_assign(&mut self, rhs: Self) {
         for i in 0..3 {
@@ -110,6 +139,13 @@ impl std::ops::AddAssign for Vec3 {
 
 impl std::ops::Neg for Vec3 {
     type Output = Self;
+    fn neg(self) -> Self::Output {
+        Vec3::new(-self.e[0], -self.e[1], -self.e[2])
+    }
+}
+
+impl std::ops::Neg for &Vec3 {
+    type Output = Vec3;
     fn neg(self) -> Self::Output {
         Vec3::new(-self.e[0], -self.e[1], -self.e[2])
     }
