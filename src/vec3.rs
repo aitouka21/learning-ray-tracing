@@ -53,6 +53,16 @@ impl Vec3 {
         .unit()
     }
 
+    pub fn random_in_unit_disk() -> Self {
+        let mut rng = rand::thread_rng();
+        loop {
+            let p = Vec3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0);
+            if p.len_squared() < 1.0 {
+                break p;
+            }
+        }
+    }
+
     pub fn reflect(v: &Vec3, n: &Vec3) -> Self {
         v - 2.0 * Self::dot(v, n) * n
     }

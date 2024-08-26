@@ -1,4 +1,4 @@
-use std::ops::{Div, Mul, Sub};
+use std::ops::{Div, Mul};
 
 use rand::prelude::*;
 
@@ -19,6 +19,9 @@ pub struct Camera {
     pixel00_loc: Point3,
     pixel_delta_u: Vec3,
     pixel_delta_v: Vec3,
+    defocus_disk_u: Vec3,
+    defocus_disk_v: Vec3,
+    defocus_angle: f64,
     samples_per_pixel: i32,
     pixel_samples_scale: f64,
     max_depth: i32,
@@ -33,6 +36,8 @@ pub struct Settings {
     pub lookfrom: Point3,
     pub lookat: Point3,
     pub vup: Vec3,
+    defocus_angle: f64,
+    focus_dist: f64,
 }
 
 impl Default for Settings {
@@ -42,10 +47,12 @@ impl Default for Settings {
             image_width: 400,
             samples_per_pixel: 100,
             max_depth: 50,
-            vfov: 25.0,
+            vfov: 20.0,
             lookfrom: Point3::new(-2.0, 2.0, 1.0),
             lookat: Point3::new(0.0, 0.0, -1.0),
             vup: Vec3::new(0.0, 1.0, 0.0),
+            defocus_angle: 0.6,
+            focus_dist: 3.4,
         }
     }
 }
@@ -61,6 +68,8 @@ impl Camera {
             lookfrom,
             lookat,
             vup,
+            focus_dist,
+            defocus_angle,
         }: Settings,
     ) -> Self {
         #[allow(clippy::cast_possible_truncation)]
@@ -70,13 +79,11 @@ impl Camera {
         };
 
         let center = lookfrom;
-        let focal_length = lookfrom.sub(lookat).len();
-        let h = vfov.to_radians().div(2.0).tan();
-        let viewport_height = 2.0 * h * focal_length;
+        let viewport_height = 2.0 * vfov.to_radians().div(2.0).tan() * focus_dist;
         let viewport_width = viewport_height * (f64::from(image_width) / f64::from(image_height));
 
         let w = (lookfrom - lookat).unit();
-        let u = Vec3::cross(&vup, &w);
+        let u = Vec3::cross(&vup, &w).unit();
         let v = Vec3::cross(&w, &u);
 
         let viewport_u = viewport_width * u;
@@ -85,12 +92,15 @@ impl Camera {
         let pixel_delta_u = viewport_u / f64::from(image_width);
         let pixel_delta_v = viewport_v / f64::from(image_height);
 
-        let viewport_upper_left =
-            center - focal_length.mul(w) - viewport_u / 2.0 - viewport_v / 2.0;
+        let viewport_upper_left = center - focus_dist.mul(w) - viewport_u / 2.0 - viewport_v / 2.0;
 
         let pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
-        let pixel_samples_scale = 1.0 / f64::from(samples_per_pixel);
+        let defocus_radius = focus_dist * defocus_angle.div(2.0).to_radians().tan();
+        let defocus_disk_u = u * defocus_radius;
+        let defocus_disk_v = v * defocus_radius;
+
+        let pixel_samples_scale = f64::from(samples_per_pixel).recip();
 
         Self {
             image_width,
@@ -99,6 +109,9 @@ impl Camera {
             pixel00_loc,
             pixel_delta_u,
             pixel_delta_v,
+            defocus_disk_u,
+            defocus_disk_v,
+            defocus_angle,
             samples_per_pixel,
             pixel_samples_scale,
             max_depth,
@@ -135,7 +148,13 @@ impl Camera {
             + (i + offset.x()) * self.pixel_delta_u
             + (j + offset.y()) * self.pixel_delta_v;
 
-        let ray_direction = pixel_sample - self.center;
+        let ray_origin = if self.defocus_angle <= 0.0 {
+            self.center
+        } else {
+            self.defocus_disk_sample()
+        };
+
+        let ray_direction = pixel_sample - ray_origin;
         Ray::new(self.center, ray_direction)
     }
 
@@ -157,5 +176,10 @@ impl Camera {
         let unit_direction = r.direction().unit();
         let a = 0.5 * (unit_direction.y() + 1.0);
         (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
+    }
+
+    fn defocus_disk_sample(&self) -> Point3 {
+        let p = Vec3::random_in_unit_disk();
+        self.center + p.x() * self.defocus_disk_u + p.y() * self.defocus_disk_v
     }
 }
