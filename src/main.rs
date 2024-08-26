@@ -10,7 +10,7 @@ mod ray;
 mod sphere;
 mod vec3;
 
-use camera::Camera;
+use camera::{Camera, Settings};
 use color::Color;
 use hittable_list::HittableList;
 use material::Material;
@@ -56,6 +56,6 @@ fn main() {
         world.add(Rc::new(sphere));
     }
 
-    let camera = Camera::default();
+    let camera = Camera::new(Settings::default());
     camera.render(&world);
 }
