@@ -53,7 +53,7 @@ impl Material {
                 };
 
                 let unit_direction = r_in.direction().unit();
-                let refracted = -Vec3::refract(&unit_direction, &hit_record.normal, ri);
+                let refracted = Vec3::refract(&unit_direction, &hit_record.normal, ri);
                 let scattered = Ray::new(hit_record.p, refracted);
 
                 let result = ScatterResult {
