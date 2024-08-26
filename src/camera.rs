@@ -24,7 +24,7 @@ pub struct Camera {
 
 impl Default for Camera {
     fn default() -> Self {
-        Self::new(16.0 / 9.0, 400, 100, 50)
+        Self::new(16.0 / 9.0, 400, 50, 5)
     }
 }
 

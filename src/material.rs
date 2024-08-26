@@ -8,6 +8,7 @@ pub struct ScatterResult {
 pub enum Material {
     Lambertian { albedo: Color },
     Metal { albedo: Color, fuzz: f64 },
+    Dielectric { refraction_index: f64 },
 }
 
 impl Material {
@@ -43,6 +44,24 @@ impl Material {
                 };
                 Some(result)
             }
+            Self::Dielectric { refraction_index } => {
+                let attenuation = Color::new(1.0, 1.0, 1.0);
+                let ri = if hit_record.front_face {
+                    refraction_index.recip()
+                } else {
+                    *refraction_index
+                };
+
+                let unit_direction = r_in.direction().unit();
+                let refracted = Vec3::refract(&unit_direction, &hit_record.normal, ri);
+                let scattered = Ray::new(hit_record.p, refracted);
+
+                let result = ScatterResult {
+                    attenuation,
+                    scattered,
+                };
+                Some(result)
+            }
         }
     }
 
@@ -56,5 +75,9 @@ impl Material {
         } else {
             Material::Metal { albedo, fuzz: 1.0 }
         }
+    }
+
+    pub fn dielectric(refraction_index: f64) -> Self {
+        Material::Dielectric { refraction_index }
     }
 }
