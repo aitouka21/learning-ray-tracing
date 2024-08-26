@@ -100,8 +100,7 @@ fn main() {
         lookfrom: Point3::new(13.0, 2.0, 3.0),
         lookat: Point3::new(0.0, 0.0, 0.0),
         vup: Vec3::new(0.0, 1.0, 0.0),
-        // FIXME: the blur part seems incorrect
-        defocus_angle: 0.2,
+        defocus_angle: 0.6,
         focus_dist: 10.0,
     };
 

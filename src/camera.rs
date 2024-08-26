@@ -156,7 +156,7 @@ impl Camera {
         };
 
         let ray_direction = pixel_sample - ray_origin;
-        Ray::new(self.center, ray_direction)
+        Ray::new(ray_origin, ray_direction)
     }
 
     fn ray_color(r: &Ray, depth: i32, world: &HittableList) -> Color {
