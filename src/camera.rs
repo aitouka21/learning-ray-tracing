@@ -12,6 +12,7 @@ use crate::{
     vec3::{Point3, Vec3},
 };
 
+#[derive(Debug)]
 pub struct Camera {
     image_width: i32,
     image_height: i32,
@@ -36,8 +37,8 @@ pub struct Settings {
     pub lookfrom: Point3,
     pub lookat: Point3,
     pub vup: Vec3,
-    defocus_angle: f64,
-    focus_dist: f64,
+    pub defocus_angle: f64,
+    pub focus_dist: f64,
 }
 
 impl Default for Settings {
@@ -52,7 +53,7 @@ impl Default for Settings {
             lookat: Point3::new(0.0, 0.0, -1.0),
             vup: Vec3::new(0.0, 1.0, 0.0),
             defocus_angle: 0.6,
-            focus_dist: 3.4,
+            focus_dist: 10.0,
         }
     }
 }
@@ -68,8 +69,8 @@ impl Camera {
             lookfrom,
             lookat,
             vup,
-            focus_dist,
             defocus_angle,
+            focus_dist,
         }: Settings,
     ) -> Self {
         #[allow(clippy::cast_possible_truncation)]
@@ -96,7 +97,7 @@ impl Camera {
 
         let pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
-        let defocus_radius = focus_dist * defocus_angle.div(2.0).to_radians().tan();
+        let defocus_radius = focus_dist * (defocus_angle.div(2.0).to_radians().tan());
         let defocus_disk_u = u * defocus_radius;
         let defocus_disk_v = v * defocus_radius;
 
