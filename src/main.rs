@@ -23,6 +23,7 @@ fn main() {
     let material_ground = Rc::new(Material::lambertian(Color::new(0.8, 0.8, 0.0)));
     let material_center = Rc::new(Material::lambertian(Color::new(0.1, 0.2, 0.5)));
     let material_left = Rc::new(Material::dielectric(1.5));
+    let material_bubble = Rc::new(Material::dielectric(1.0 / 1.5));
     let material_right = Rc::new(Material::metal(Color::new(0.8, 0.6, 0.2), 1.0));
 
     {
@@ -40,6 +41,12 @@ fn main() {
     {
         let center = Point3::new(-1.0, 0.0, -1.0);
         let sphere = Sphere::new(center, 0.5, Rc::clone(&material_left));
+        world.add(Rc::new(sphere));
+    }
+
+    {
+        let center = Point3::new(-1.0, 0.0, -1.0);
+        let sphere = Sphere::new(center, 0.4, Rc::clone(&material_bubble));
         world.add(Rc::new(sphere));
     }
 

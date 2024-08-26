@@ -53,8 +53,15 @@ impl Material {
                 };
 
                 let unit_direction = r_in.direction().unit();
-                let refracted = Vec3::refract(&unit_direction, &hit_record.normal, ri);
-                let scattered = Ray::new(hit_record.p, refracted);
+                let cos_theta = Vec3::dot(&-unit_direction, &hit_record.normal).min(1.0);
+                let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+                let cannot_refract = ri * sin_theta > 1.0;
+                let direction = if cannot_refract || reflectance(cos_theta, ri) > rand::random() {
+                    Vec3::reflect(&unit_direction, &hit_record.normal)
+                } else {
+                    Vec3::refract(&unit_direction, &hit_record.normal, ri)
+                };
+                let scattered = Ray::new(hit_record.p, direction);
 
                 let result = ScatterResult {
                     attenuation,
@@ -80,4 +87,11 @@ impl Material {
     pub fn dielectric(refraction_index: f64) -> Self {
         Material::Dielectric { refraction_index }
     }
+}
+
+fn reflectance(cosine: f64, refraction_index: f64) -> f64 {
+    // Schlick's approximation
+    let r0 = (1.0 - refraction_index) / (1.0 + refraction_index);
+    let r0 = r0 * r0;
+    r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
 }
