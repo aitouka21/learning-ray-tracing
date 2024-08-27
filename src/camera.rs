@@ -1,3 +1,4 @@
+use indicatif::ParallelProgressIterator;
 use rayon::prelude::*;
 use std::ops::{Div, Mul, Rem};
 
@@ -15,8 +16,8 @@ use crate::{
 
 #[derive(Debug)]
 pub struct Camera {
-    image_width: i32,
-    image_height: i32,
+    image_width: u32,
+    image_height: u32,
     center: Point3,
     pixel00_loc: Point3,
     pixel_delta_u: Vec3,
@@ -24,16 +25,16 @@ pub struct Camera {
     defocus_disk_u: Vec3,
     defocus_disk_v: Vec3,
     defocus_angle: f64,
-    samples_per_pixel: i32,
+    samples_per_pixel: u32,
     pixel_samples_scale: f64,
-    max_depth: i32,
+    max_depth: u32,
 }
 
 pub struct Settings {
     pub aspect_ratio: f64,
-    pub image_width: i32,
-    pub samples_per_pixel: i32,
-    pub max_depth: i32,
+    pub image_width: u32,
+    pub samples_per_pixel: u32,
+    pub max_depth: u32,
     pub vfov: f64,
     pub lookfrom: Point3,
     pub lookat: Point3,
@@ -74,9 +75,10 @@ impl Camera {
             focus_dist,
         }: Settings,
     ) -> Self {
-        #[allow(clippy::cast_possible_truncation)]
         let image_height = match f64::from(image_width) / aspect_ratio {
-            n if n > 1.0 => n as i32,
+            #[allow(clippy::cast_possible_truncation)]
+            #[allow(clippy::cast_sign_loss)]
+            n if n > 1.0 => n as u32,
             _ => 1,
         };
 
@@ -121,8 +123,12 @@ impl Camera {
     }
 
     pub fn render(&self, world: &HittableList) {
-        let colors = (0..self.image_width * self.image_height)
+        let total = self.image_width * self.image_height;
+
+        #[allow(clippy::cast_sign_loss)]
+        let colors = (0..total)
             .into_par_iter()
+            .progress_count(u64::from(total))
             .map(|n| {
                 let j = n.div(self.image_width);
                 let i = n.rem(self.image_width);
@@ -144,7 +150,7 @@ impl Camera {
         Vec3::new(rng.gen_range(-0.5..0.5), rng.gen_range(-0.5..0.5), 0.0)
     }
 
-    fn get_ray(&self, i: i32, j: i32) -> Ray {
+    fn get_ray(&self, i: u32, j: u32) -> Ray {
         let i = f64::from(i);
         let j = f64::from(j);
         let offset = Self::sample_square();
@@ -162,8 +168,8 @@ impl Camera {
         Ray::new(ray_origin, ray_direction)
     }
 
-    fn ray_color(r: &Ray, depth: i32, world: &HittableList) -> Color {
-        if depth <= 0 {
+    fn ray_color(r: &Ray, depth: u32, world: &HittableList) -> Color {
+        if depth == 0 {
             return Color::default();
         }
         let interval = Interval::new(0.001, f64::INFINITY);

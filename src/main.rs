@@ -1,5 +1,4 @@
 use std::sync::Arc;
-
 mod camera;
 mod color;
 mod hittable;
