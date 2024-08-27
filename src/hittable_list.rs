@@ -3,11 +3,10 @@ use crate::{
     interval::Interval,
     ray::Ray,
 };
-use std::rc::Rc;
 
 #[derive(Default)]
 pub struct HittableList {
-    objects: Vec<Rc<dyn Hittable>>,
+    objects: Vec<Box<dyn Hittable + Sync + Send>>,
 }
 
 impl HittableList {
@@ -16,7 +15,7 @@ impl HittableList {
         self.objects.clear();
     }
 
-    pub fn add(&mut self, hittable: Rc<dyn Hittable>) {
+    pub fn add(&mut self, hittable: Box<dyn Hittable + Sync + Send>) {
         self.objects.push(hittable);
     }
 }

@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 mod camera;
 mod color;
@@ -20,8 +20,6 @@ use vec3::{Point3, Vec3};
 
 fn main() {
     let mut world = HittableList::default();
-
-    let ground_material = Rc::new(Material::lambertian(Color::new(0.5, 0.5, 0.5)));
 
     for a in -11..11 {
         for b in -11..11 {
@@ -46,7 +44,7 @@ fn main() {
                         rng.gen_range(0.0..1.0),
                     );
                     let albedo = c1 * c2;
-                    Rc::new(Material::Lambertian { albedo })
+                    Arc::new(Material::Lambertian { albedo })
                 } else if choose_mat < 0.95 {
                     let albedo = Color::new(
                         rng.gen_range(0.0..1.0),
@@ -54,41 +52,42 @@ fn main() {
                         rng.gen_range(0.0..1.0),
                     );
                     let fuzz = rng.gen_range(0.0..0.5);
-                    Rc::new(Material::metal(albedo, fuzz))
+                    Arc::new(Material::metal(albedo, fuzz))
                 } else {
-                    Rc::new(Material::dielectric(1.5))
+                    Arc::new(Material::dielectric(1.5))
                 };
                 let sphere = Sphere::new(center, 0.2, mat);
-                world.add(Rc::new(sphere));
+                world.add(Box::new(sphere));
             }
         }
     }
 
     {
+        let material = Arc::new(Material::lambertian(Color::new(0.5, 0.5, 0.5)));
         let center = Point3::new(0.0, -1000.0, 0.0);
-        let sphere = Sphere::new(center, 1000.0, Rc::clone(&ground_material));
-        world.add(Rc::new(sphere));
+        let sphere = Sphere::new(center, 1000.0, material);
+        world.add(Box::new(sphere));
     }
 
     {
-        let material = Rc::new(Material::dielectric(1.5));
+        let material = Arc::new(Material::dielectric(1.5));
         let center = Point3::new(0.0, 1.0, 0.0);
-        let sphere = Sphere::new(center, 1.0, Rc::clone(&material));
-        world.add(Rc::new(sphere));
+        let sphere = Sphere::new(center, 1.0, material);
+        world.add(Box::new(sphere));
     }
 
     {
-        let material = Rc::new(Material::lambertian(Color::new(0.4, 0.2, 0.1)));
+        let material = Arc::new(Material::lambertian(Color::new(0.4, 0.2, 0.1)));
         let center = Point3::new(-4.0, 1.0, 0.0);
-        let sphere = Sphere::new(center, 1.0, Rc::clone(&material));
-        world.add(Rc::new(sphere));
+        let sphere = Sphere::new(center, 1.0, material);
+        world.add(Box::new(sphere));
     }
 
     {
-        let material = Rc::new(Material::metal(Color::new(0.7, 0.6, 0.5), 0.0));
+        let material = Arc::new(Material::metal(Color::new(0.7, 0.6, 0.5), 0.0));
         let center = Point3::new(4.0, 1.0, 0.0);
-        let sphere = Sphere::new(center, 1.0, Rc::clone(&material));
-        world.add(Rc::new(sphere));
+        let sphere = Sphere::new(center, 1.0, material);
+        world.add(Box::new(sphere));
     }
 
     let settings = Settings {

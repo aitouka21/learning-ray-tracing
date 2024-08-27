@@ -1,4 +1,5 @@
-use std::ops::{Div, Mul};
+use rayon::prelude::*;
+use std::ops::{Div, Mul, Rem};
 
 use rand::prelude::*;
 
@@ -120,20 +121,22 @@ impl Camera {
     }
 
     pub fn render(&self, world: &HittableList) {
-        println!("P3\n{0} {1}\n255", self.image_width, self.image_height);
-        for j in 0..self.image_height {
-            eprint!("Progress: ({}/ {})\r", j + 1, self.image_height);
-            for i in 0..self.image_width {
+        let colors = (0..self.image_width * self.image_height)
+            .into_par_iter()
+            .map(|n| {
+                let j = n.div(self.image_width);
+                let i = n.rem(self.image_width);
                 let mut pixel_color = Color::new(0.0, 0.0, 0.0);
                 for _ in 0..self.samples_per_pixel {
                     let r = self.get_ray(i, j);
                     pixel_color += Self::ray_color(&r, self.max_depth, world);
                 }
-                let c = self.pixel_samples_scale * pixel_color;
-                color::write(&c);
-            }
-        }
-        eprintln!("Done.                        ");
+                self.pixel_samples_scale * pixel_color
+            })
+            .collect::<Vec<_>>();
+
+        println!("P3\n{0} {1}\n255", self.image_width, self.image_height);
+        colors.iter().for_each(color::write);
     }
 
     fn sample_square() -> Vec3 {

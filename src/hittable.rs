@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::{
     interval::Interval,
@@ -12,11 +12,11 @@ pub struct HitRecord {
     pub normal: Vec3,
     pub t: f64,
     pub front_face: bool,
-    pub mat: Rc<Material>,
+    pub mat: Arc<Material>,
 }
 
 impl HitRecord {
-    pub fn new(t: f64, p: Point3, ray: &Ray, outward_normal: Vec3, mat: Rc<Material>) -> Self {
+    pub fn new(t: f64, p: Point3, ray: &Ray, outward_normal: Vec3, mat: Arc<Material>) -> Self {
         let front_face = Vec3::dot(ray.direction(), &outward_normal) < 0.0;
         let normal = if front_face {
             outward_normal
